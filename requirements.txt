@@ -1,0 +1,9 @@
+fastapi
+uvicorn
+llama-index
+chromadb
+python-multipart
+pydantic-settings
+llama-index-vector-stores-chroma
+llama-index-embeddings-openai
+python-dotenv
