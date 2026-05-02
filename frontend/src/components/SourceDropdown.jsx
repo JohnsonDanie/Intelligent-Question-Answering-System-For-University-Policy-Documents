@@ -10,7 +10,7 @@ const SourceDropdown = ({ sources }) => {
         <div className="mt-3 border border-slate-200 rounded-lg overflow-hidden bg-white shadow-sm">
             <button
                 onClick={() => setIsOpen(!isOpen)}
-                className="w-full flex items-center justify-between p-3 text-xs font-semibold text-university-blue bg-university-lightBlue/30 hover:bg-university-lightBlue/50 transition-colors"
+                className="w-full flex items-center justify-between p-3 text-xs font-semibold text-university-blue bg-university-light-blue/30 hover:bg-university-light-blue/50 transition-colors"
             >
                 <div className="flex items-center gap-2">
                     <BookOpen className="w-3.5 h-3.5" />

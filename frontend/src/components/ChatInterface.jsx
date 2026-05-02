@@ -18,7 +18,7 @@ const ChatInterface = ({ messages, query, setQuery, onSend, isLoading }) => {
             {/* Header */}
             <div className="h-16 border-b border-slate-200 bg-white/80 backdrop-blur-md flex items-center px-8 z-10 sticky top-0 shadow-sm">
                 <GraduationCap className="w-6 h-6 text-university-blue mr-3" />
-                <h2 className="font-bold text-slate-800">Intelligent Policy Advisor</h2>
+                <h2 className="font-bold text-slate-800">Nile University Policy Advisor</h2>
                 <div className="ml-auto flex items-center gap-2">
                     <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse"></div>
                     <span className="text-xs font-semibold text-slate-400 uppercase tracking-widest">Active System</span>
@@ -30,9 +30,9 @@ const ChatInterface = ({ messages, query, setQuery, onSend, isLoading }) => {
                 {messages.length === 0 ? (
                     <div className="h-full flex flex-col items-center justify-center text-center opacity-40 py-20">
                         <GraduationCap className="w-20 h-20 text-university-blue mb-6 stroke-1" />
-                        <h3 className="text-2xl font-bold text-university-blue mb-2">Welcome to the Policy Assistant</h3>
+                        <h3 className="text-2xl font-bold text-university-blue mb-2">Welcome to Nile University Policy AI</h3>
                         <p className="max-w-md text-slate-600">
-                            Upload university policies on the left, then ask me anything about grading, conduct, or honors.
+                            Ask me anything about grading, student conduct, or university honors. I'm here to help you navigate our policies.
                         </p>
                     </div>
                 ) : (
@@ -42,14 +42,14 @@ const ChatInterface = ({ messages, query, setQuery, onSend, isLoading }) => {
                             className={`flex gap-4 ${message.type === 'user' ? 'justify-end' : 'justify-start'}`}
                         >
                             {message.type === 'bot' && (
-                                <div className="w-10 h-10 rounded-full bg-university-blue flex items-center justify-center flex-shrink-0 shadow-lg ring-4 ring-university-lightBlue/30">
+                                <div className="w-10 h-10 rounded-full bg-university-blue flex items-center justify-center flex-shrink-0 shadow-lg ring-4 ring-university-light-blue/30">
                                     <GraduationCap className="w-6 h-6 text-white" />
                                 </div>
                             )}
                             <div className={`max-w-[70%] group ${message.type === 'user' ? 'order-last' : ''}`}>
                                 <div
                                     className={`p-5 rounded-2xl shadow-sm border ${message.type === 'user'
-                                            ? 'bg-university-blue text-white border-university-darkBlue rounded-tr-none'
+                                            ? 'bg-university-blue text-white border-university-dark-blue rounded-tr-none'
                                             : 'bg-white text-slate-700 border-slate-100 rounded-tl-none'
                                         }`}
                                 >
@@ -101,7 +101,7 @@ const ChatInterface = ({ messages, query, setQuery, onSend, isLoading }) => {
                     <button
                         type="submit"
                         disabled={isLoading || !query.trim()}
-                        className="bg-university-blue text-white p-3 rounded-xl hover:bg-university-darkBlue transition-all disabled:opacity-30 disabled:hover:bg-university-blue shadow-lg active:scale-95"
+                        className="bg-university-blue text-white p-3 rounded-xl hover:bg-university-dark-blue transition-all disabled:opacity-30 disabled:hover:bg-university-blue shadow-lg active:scale-95"
                     >
                         <Send className="w-5 h-5" />
                     </button>

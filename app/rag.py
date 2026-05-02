@@ -64,6 +64,11 @@ class RAGManager:
         if not os.path.exists(DATA_DIR):
             os.makedirs(DATA_DIR)
         
+        # Check if directory has files before reading
+        if not os.listdir(DATA_DIR):
+            self.query_engine = None
+            return
+            
         documents = SimpleDirectoryReader(DATA_DIR).load_data()
         
         if not documents:

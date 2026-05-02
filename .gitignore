@@ -1,0 +1,23 @@
+# Sensitive Data
+.env
+*.key
+*.pem
+
+# Python
+.venv/
+__pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/
+
+# Node.js
+node_modules/
+dist/
+build/
+.eslintcache
+
+# Project Specific
+history.json
+chroma_db/
+data/*.pdf
+.DS_Store

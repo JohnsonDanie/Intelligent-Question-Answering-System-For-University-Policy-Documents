@@ -1,12 +1,16 @@
 import React from 'react';
-import { Upload, FileText, Plus, Trash2 } from 'lucide-react';
+import { Upload, FileText, Trash2 } from 'lucide-react';
+import heroImage from '../assets/Nile-University-hero.jpg';
 
 const Sidebar = ({ policies, onUpload, onDelete, isUploading }) => {
     return (
         <div className="w-64 bg-university-blue text-white h-full flex flex-col shadow-xl">
-            <div className="p-6 border-b border-white/10">
-                <h1 className="text-xl font-bold tracking-tight">University Policy AI</h1>
-                <p className="text-xs text-blue-200 mt-1">Intelligent Question Answering System</p>
+            <div className="p-6 border-b border-white/10 flex flex-col items-center gap-3">
+                <img src={heroImage} alt="Nile University" className="w-20 h-20 rounded-full border-2 border-white/20 object-cover shadow-lg" />
+                <div className="text-center">
+                    <h1 className="text-xl font-bold tracking-tight">Nile University AI</h1>
+                    <p className="text-[10px] text-blue-200 uppercase tracking-widest mt-1">Policy Knowledge Base</p>
+                </div>
             </div>
 
             <div className="p-4">
@@ -60,7 +64,7 @@ const Sidebar = ({ policies, onUpload, onDelete, isUploading }) => {
                 </div>
             </div>
 
-            <div className="p-4 border-t border-white/10 bg-university-darkBlue/50 text-xs text-blue-300/60 font-medium">
+            <div className="p-4 border-t border-white/10 bg-university-dark-blue/50 text-xs text-blue-300/60 font-medium">
                 &copy; 2026 University RAG System
             </div>
         </div>
