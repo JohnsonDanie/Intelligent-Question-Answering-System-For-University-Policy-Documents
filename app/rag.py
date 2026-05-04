@@ -16,6 +16,9 @@ from llama_index.vector_stores.chroma import ChromaVectorStore
 from llama_index.embeddings.openai import OpenAIEmbedding
 from llama_index.llms.openai import OpenAI
 from dotenv import load_dotenv
+import logging
+
+logger = logging.getLogger("university-policy-rag")
 
 load_dotenv()
 
@@ -57,7 +60,10 @@ class RAGManager:
         self.vector_index = None
         self.summary_index = None
         self.query_engine = None
-        self._initialize_index()
+        try:
+            self._initialize_index()
+        except Exception as e:
+            logger.error(f"Failed to initialize RAG index: {str(e)}")
 
     def _initialize_index(self):
         """Load documents and initialize Vector and Summary indices with a Router."""
@@ -158,7 +164,11 @@ class RAGManager:
         if not self.query_engine:
             return {"response": "No documents indexed yet.", "sources": []}
 
-        response = self.query_engine.query(query_str)
+        try:
+            response = self.query_engine.query(query_str)
+        except Exception as e:
+            logger.error(f"Query engine failure: {str(e)}")
+            return {"response": "The query system encountered an internal error. Please try again later.", "sources": []}
         
         sources = []
         for node in response.source_nodes:

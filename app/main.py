@@ -1,18 +1,37 @@
 import shutil
 import os
 import json
+import logging
 from fastapi import FastAPI, UploadFile, File, HTTPException, Depends, Security
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.security import APIKeyHeader
 from pydantic import BaseModel
+from pydantic_settings import BaseSettings
 from app.rag import rag_manager, DATA_DIR
+
+# Configure Logging
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+)
+logger = logging.getLogger("university-policy-backend")
+
+class Settings(BaseSettings):
+    API_KEY: str = "default_key_change_me"
+    CORS_ORIGINS: str = "http://localhost:5173"
+    OPENAI_API_KEY: str
+
+    class Config:
+        env_file = ".env"
+
+settings = Settings()
 
 app = FastAPI(title="RAG Backend for University Policies")
 
 # Add CORS middleware
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # For development; restrict in production
+    allow_origins=settings.CORS_ORIGINS.split(","),
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -23,9 +42,8 @@ API_KEY_NAME = "X-API-Key"
 api_key_header = APIKeyHeader(name=API_KEY_NAME, auto_error=False)
 
 async def verify_api_key(api_key: str = Security(api_key_header)):
-    # If API_KEY is set in .env, enforce it. Otherwise, allow (for easier dev setup)
-    expected_key = os.getenv("API_KEY")
-    if expected_key and api_key != expected_key:
+    if api_key != settings.API_KEY:
+        logger.warning(f"Unauthorized access attempt with API key: {api_key}")
         raise HTTPException(status_code=403, detail="Invalid API Key")
     return api_key
 
@@ -78,10 +96,12 @@ async def upload_pdf(file: UploadFile = File(...)):
 async def query_index(request: QueryRequest, api_key: str = Depends(verify_api_key)):
     """Query the RAG index and return a response with sources."""
     try:
+        logger.info(f"Processing query: {request.query}")
         result = rag_manager.query(request.query)
         save_to_history(request.query, result["response"])
         return result
     except Exception as e:
+        logger.error(f"Query failed: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Query failed: {str(e)}")
 
 @app.delete("/policies/{filename}")
