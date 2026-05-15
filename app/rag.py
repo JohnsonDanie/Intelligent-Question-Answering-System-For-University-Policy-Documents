@@ -22,11 +22,26 @@ logger = logging.getLogger("university-policy-rag")
 
 load_dotenv()
 
-# Configuration
-DATA_DIR = "./data"
-CHROMA_DB_PATH = "./chroma_db"
+# ---------------------------------------------------------------
+# Configuration — all paths are configurable via environment vars.
+# On a platform with a persistent disk (Railway, Render, Fly.io),
+# set DATA_DIR and CHROMA_DB_PATH to mount-point paths.
+# ---------------------------------------------------------------
+DATA_DIR = os.environ.get("DATA_DIR", "./data")
+CHROMA_DB_PATH = os.environ.get("CHROMA_DB_PATH", "./chroma_db")
 
-# Initialize Settings
+# ---------------------------------------------------------------
+# Validate critical environment variables at import time so the
+# app fails fast with a clear error rather than a cryptic one.
+# ---------------------------------------------------------------
+_openai_key = os.environ.get("OPENAI_API_KEY", "")
+if not _openai_key or _openai_key.startswith("sk-proj-your"):
+    logger.warning(
+        "OPENAI_API_KEY is not set or is still the placeholder value. "
+        "The RAG system will not function. Set this in your host environment variables."
+    )
+
+# Initialize LlamaIndex global settings
 Settings.llm = OpenAI(model="gpt-3.5-turbo")
 Settings.embed_model = OpenAIEmbedding()
 
@@ -51,46 +66,62 @@ QA_PROMPT_TMPL = (
 # Apply system prompt to the global settings
 Settings.system_prompt = SYSTEM_PROMPT
 
+
 class RAGManager:
     def __init__(self):
+        self.db = None
+        self.chroma_collection = None
+        self.vector_store = None
+        self.storage_context = None
+        self.vector_index = None
+        self.summary_index = None
+        self.query_engine = None
+        self._initialized = False
+
+        try:
+            self._setup_chroma()
+            self._initialize_index()
+            self._initialized = True
+        except Exception as e:
+            logger.error(
+                f"Failed to initialize RAG index: {str(e)}. "
+                "The system will start but queries will not work until this is resolved. "
+                "Ensure OPENAI_API_KEY is set and CHROMA_DB_PATH is writable."
+            )
+
+    def _setup_chroma(self):
+        """Set up ChromaDB client and collection."""
+        os.makedirs(CHROMA_DB_PATH, exist_ok=True)
         self.db = chromadb.PersistentClient(path=CHROMA_DB_PATH)
         self.chroma_collection = self.db.get_or_create_collection("university_policies")
         self.vector_store = ChromaVectorStore(chroma_collection=self.chroma_collection)
         self.storage_context = StorageContext.from_defaults(vector_store=self.vector_store)
-        self.vector_index = None
-        self.summary_index = None
-        self.query_engine = None
-        try:
-            self._initialize_index()
-        except Exception as e:
-            logger.error(f"Failed to initialize RAG index: {str(e)}")
 
     def _initialize_index(self):
         """Load documents and initialize Vector and Summary indices with a Router."""
-        if not os.path.exists(DATA_DIR):
-            os.makedirs(DATA_DIR)
-        
+        os.makedirs(DATA_DIR, exist_ok=True)
+
         # Check if directory has files before reading
-        if not os.listdir(DATA_DIR):
+        pdf_files = [f for f in os.listdir(DATA_DIR) if f.endswith(".pdf")]
+        if not pdf_files:
+            logger.info("No PDF documents found in DATA_DIR. Upload a document to begin.")
             self.query_engine = None
             return
-            
+
         documents = SimpleDirectoryReader(DATA_DIR).load_data()
-        
+
         if not documents:
             self.query_engine = None
             return
 
         # Initialize or Refresh Indices
         self.vector_index = VectorStoreIndex.from_documents(
-            documents, 
+            documents,
             storage_context=self.storage_context
         )
         # Note: SummaryIndex doesn't support persistent vector stores in the same way,
         # but we can rebuild it from the same documents.
-        self.summary_index = SummaryIndex.from_documents(
-            documents
-        )
+        self.summary_index = SummaryIndex.from_documents(documents)
 
         self._setup_query_engine()
 
@@ -133,7 +164,11 @@ class RAGManager:
         """Incrementally refresh the index after new uploads or updates."""
         if not os.path.exists(DATA_DIR):
             return
-            
+
+        pdf_files = [f for f in os.listdir(DATA_DIR) if f.endswith(".pdf")]
+        if not pdf_files:
+            return
+
         documents = SimpleDirectoryReader(DATA_DIR).load_data()
         if not documents:
             return
@@ -152,24 +187,31 @@ class RAGManager:
         file_path = os.path.join(DATA_DIR, file_name)
         if os.path.exists(file_path):
             os.remove(file_path)
-        
+
         # Delete from ChromaDB by metadata filter
-        self.chroma_collection.delete(where={"file_name": file_name})
-        
+        if self.chroma_collection:
+            self.chroma_collection.delete(where={"file_name": file_name})
+
         # Refresh the index to rebuild the query engine
         self.refresh_index()
 
     def query(self, query_str: str) -> Dict[str, Any]:
         """Query the index and return response with enhanced citations."""
         if not self.query_engine:
-            return {"response": "No documents indexed yet.", "sources": []}
+            return {
+                "response": "No documents have been indexed yet. Please upload a policy PDF using the sidebar.",
+                "sources": []
+            }
 
         try:
             response = self.query_engine.query(query_str)
         except Exception as e:
             logger.error(f"Query engine failure: {str(e)}")
-            return {"response": "The query system encountered an internal error. Please try again later.", "sources": []}
-        
+            return {
+                "response": "The query system encountered an internal error. Please try again later.",
+                "sources": []
+            }
+
         sources = []
         for node in response.source_nodes:
             metadata = node.node.metadata
@@ -184,5 +226,6 @@ class RAGManager:
             "response": str(response),
             "sources": sources
         }
+
 
 rag_manager = RAGManager()
